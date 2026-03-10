@@ -19,9 +19,11 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
-
       - name: Create token.json
-        run: echo '${{ secrets.GOOGLE_TOKEN_JSON }}' > token.json
+  run: |
+    cat <<EOF > token.json
+    ${{ secrets.GOOGLE_TOKEN_JSON }}
+    EOF
 
       - name: Run bot
         run: python src/bot.py
