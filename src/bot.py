@@ -4,21 +4,20 @@ import datetime
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
+from openai import OpenAI
 import requests
 
 # 1. THE "SECRET CODE" LOADER
 def get_google_creds():
-    # Check if we are on the Cloud (GitHub)
-    if "GOOGLE_TOKEN_JSON" in os.environ:
+    # GitHub Action creates 'token.json' file, so we check for that first
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json')
+    elif "GOOGLE_TOKEN_JSON" in os.environ:
         token_info = json.loads(os.environ["GOOGLE_TOKEN_JSON"])
         creds = Credentials.from_authorized_user_info(token_info)
-    # Check if we are on your Laptop
-    elif os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json')
     else:
-        raise Exception("No token.json found! Run it on your laptop first.")
+        raise Exception("No token.json found!")
 
-    # If the code is old, refresh it automatically
     if creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
     return creds
@@ -27,28 +26,39 @@ def get_google_creds():
 def run_daily_summary():
     creds = get_google_creds()
     
-    # Connect to Gmail and Calendar
+    # Connect to Gmail
     service_gmail = build('gmail', 'v1', credentials=creds)
-    service_cal = build('calendar', 'v3', credentials=creds)
-    
-    today = datetime.date.today().isoformat()
+    openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
     
     # --- GATHER DATA ---
-    # (This part talks to Google to get your emails and meetings)
-    # We'll keep it simple for the summary
+    # Fetch 5 unread emails
+    results = service_gmail.users().messages().list(userId='me', q="is:unread", maxResults=5).execute()
+    messages = results.get('messages', [])
     
-    summary_text = f"🚀 *Daily Update for {today}*\nEverything is running smoothly from the cloud!"
+    email_summaries = []
+    if not messages:
+        summary_text = "✅ No new unread emails today!"
+    else:
+        for msg in messages:
+            m = service_gmail.users().messages().get(userId='me', id=msg['id']).execute()
+            email_summaries.append(m['snippet'])
+        
+        # --- AI ANALYSIS ---
+        # Combine snippets and send to OpenAI
+        all_emails = "\n".join(email_summaries)
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant. Summarize these emails into short bullet points."},
+                {"role": "user", "content": f"Summarize these emails:\n{all_emails}"}
+            ]
+        )
+        summary_text = f"🚀 *Gmail AI Summary*:\n{response.choices[0].message.content}"
     
     # 3. SEND TO SLACK
     webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
-    if not webhook_url:
-        # If running on laptop, check the .env file
-        from dotenv import load_dotenv
-        load_dotenv()
-        webhook_url = os.getenv("SLACK_WEBHOOK_URL")
-
     requests.post(webhook_url, json={"text": summary_text})
-    print("Success! Message sent to Slack.")
+    print("Success! Summary sent to Slack.")
 
 if __name__ == "__main__":
     run_daily_summary()
