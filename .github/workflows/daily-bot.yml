@@ -10,8 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install Python
         uses: actions/setup-python@v5
@@ -20,9 +19,6 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
-
-      - name: Recreate Google token
-        run: echo '${{ secrets.GOOGLE_TOKEN }}' > token.json
 
       - name: Run bot
         run: python src/bot.py
