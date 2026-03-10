@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gmail-calendar-slack-bot"
+version = "0.1.0"
+description = "Daily Gmail + Calendar summary bot for Slack"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "google-api-python-client==2.171.0",
+  "google-auth-oauthlib==1.2.2",
+  "requests==2.32.4",
+  "python-dateutil==2.9.0.post0"
+]
+
+[project.scripts]
+gmail-calendar-slack-bot = "bot:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["bot"]

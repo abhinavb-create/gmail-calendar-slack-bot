@@ -1,0 +1,9 @@
+README.md
+pyproject.toml
+src/bot.py
+src/gmail_calendar_slack_bot.egg-info/PKG-INFO
+src/gmail_calendar_slack_bot.egg-info/SOURCES.txt
+src/gmail_calendar_slack_bot.egg-info/dependency_links.txt
+src/gmail_calendar_slack_bot.egg-info/entry_points.txt
+src/gmail_calendar_slack_bot.egg-info/requires.txt
+src/gmail_calendar_slack_bot.egg-info/top_level.txt

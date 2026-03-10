@@ -1,0 +1,119 @@
+# Gmail + Calendar Slack Summary App
+
+A downloadable app that any user can run on their system to:
+- connect Gmail + Calendar via Google OAuth approval
+- send a daily summary to Slack
+- highlight emails likely needing follow-up or missed responses
+- identify who owes the next revert (`You` vs `Client/External` vs `POC/Internal`) and since how many days
+
+## Features
+
+- Daily Gmail summary: received + unread
+- Daily Calendar summary: total meetings, completed events, upcoming events
+- Attention list: threads where latest sender is someone else and no reply from you for 24h+
+- First-run setup wizard
+- Local config/token storage in user profile directory
+
+## How End Users Use It
+
+### Option A: Install with pip (recommended for technical users)
+
+```bash
+python -m venv .venv
+. .venv/bin/activate
+pip install gmail-calendar-slack-bot-0.1.0-py3-none-any.whl
+gmail-calendar-slack-bot
+```
+
+On first run, the app asks for:
+1. Slack Incoming Webhook URL
+2. Timezone
+3. Path to Google OAuth credentials JSON
+
+Then it opens Google OAuth consent in browser automatically.
+
+### Option B: Download executable (non-technical users)
+
+Build executable for your OS:
+
+```bash
+./scripts/build_binary.sh
+```
+
+Output binary:
+- macOS/Linux: `dist/gmail-calendar-slack-bot`
+- Windows (when built on Windows): `dist/gmail-calendar-slack-bot.exe`
+
+Distribute that file in a zip. User runs it directly.
+
+## Google OAuth Setup (needed once per distributor)
+
+1. Open Google Cloud Console.
+2. Enable:
+   - Gmail API
+   - Google Calendar API
+3. Configure OAuth consent screen.
+4. Create OAuth Client ID for **Desktop App**.
+5. Download credentials JSON.
+
+Each end user provides this credentials JSON path during first run (or place it at app config path).
+
+## CLI Commands
+
+```bash
+gmail-calendar-slack-bot run
+gmail-calendar-slack-bot run --dry-run
+gmail-calendar-slack-bot init
+gmail-calendar-slack-bot config-path
+```
+
+## Daily Scheduling
+
+### macOS/Linux (cron)
+
+```cron
+30 8 * * * /absolute/path/to/gmail-calendar-slack-bot run >> /tmp/gmail_calendar_slack.log 2>&1
+```
+
+### Windows (Task Scheduler)
+
+Create a daily task and set Program/script to executable path, with argument:
+
+```text
+run
+```
+
+## Local Data Storage
+
+Use `gmail-calendar-slack-bot config-path` to see location.
+
+The app stores:
+- `config.json` (Slack webhook + timezone)
+- `credentials.json` (OAuth client)
+- `token.json` (user OAuth token)
+
+## Developer Build (this repo)
+
+```bash
+cd /Users/abhinav.b/Documents/Playground/gmail_calendar_slack_bot
+python -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+./scripts/build_release.sh
+```
+
+Artifacts:
+- wheel in `dist/`
+- source archive in `dist/`
+- executable in `dist/` (OS-specific)
+
+## Attention Logic
+
+An email thread is marked "needs attention" if:
+- latest message is from someone else and you owe response, or latest message is from you and counterparty owes response,
+- message age >= 24h.
+
+The app also proofreads subject/snippet to reduce false positives:
+- filters notification-like emails (newsletter/system alerts/no-reply/list emails)
+- detects action intent (requests/questions/keywords)
+- assigns priority (`High`, `Medium`, `Low`) based on pending owner, age, and actionability

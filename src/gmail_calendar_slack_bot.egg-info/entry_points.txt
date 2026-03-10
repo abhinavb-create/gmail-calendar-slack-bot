@@ -1,0 +1,2 @@
+[console_scripts]
+gmail-calendar-slack-bot = bot:main
