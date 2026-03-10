@@ -1,5 +1,6 @@
 name: Gmail AI Slack Bot
-
+- name: Create token.json
+  run: echo '${{ secrets.GOOGLE_TOKEN_JSON }}' > token.json
 on:
   schedule:
     - cron: "0 9 * * *"
