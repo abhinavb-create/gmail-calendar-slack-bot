@@ -2,8 +2,8 @@ name: Gmail AI Slack Bot
 
 on:
   schedule:
-    - cron: "0 9 * * *" # Runs daily at 9:00 AM UTC
-  workflow_dispatch: # Allows manual triggering
+    - cron: "0 9 * * *"
+  workflow_dispatch:
 
 jobs:
   run-bot:
@@ -25,9 +25,20 @@ jobs:
 
       - name: Create token.json
         run: |
-          cat << 'EOF' > token.json
-          ${{ secrets.GOOGLE_TOKEN_JSON }}
-          EOF
+          # This handles the base64 string you generated on your Mac
+          echo "${{ secrets.GOOGLE_TOKEN_JSON }}" | base64 --decode > token.json
+
+      - name: Debug File Mapping
+        run: |
+          echo "--- Debugging token.json ---"
+          if [ -s "token.json" ]; then
+            echo "Success: token.json exists and is not empty."
+            echo "File size: $(stat -c%s token.json) bytes"
+            echo "File starts with: $(head -c 1 token.json)"
+          else
+            echo "FAILURE: token.json is empty or missing!"
+            exit 1
+          fi
 
       - name: Run bot
         run: python src/bot.py
