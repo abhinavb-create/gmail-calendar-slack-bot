@@ -2,8 +2,8 @@ name: Gmail AI Slack Bot
 
 on:
   schedule:
-    - cron: "0 9 * * *"
-  workflow_dispatch:
+    - cron: "0 9 * * *" # Runs daily at 9:00 AM UTC
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
   run-bot:
@@ -25,7 +25,9 @@ jobs:
 
       - name: Create token.json
         run: |
-          echo '${{ secrets.GOOGLE_TOKEN_JSON }}' > token.json
+          cat << 'EOF' > token.json
+          ${{ secrets.GOOGLE_TOKEN_JSON }}
+          EOF
 
       - name: Run bot
         run: python src/bot.py
